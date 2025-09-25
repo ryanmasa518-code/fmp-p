@@ -1,4 +1,5 @@
 const BASE = "https://financialmodelingprep.com/stable";
+
 export default async function handler(req, res) {
   const key = process.env.FMP_API_KEY;
   if (!key) return res.status(500).json({ error: "Missing FMP_API_KEY" });
@@ -10,10 +11,23 @@ export default async function handler(req, res) {
 
   const out = new URL(`${BASE}/ratios`);
   out.searchParams.set("symbol", symbol);
-  if (sp.has("limit")) out.searchParams.set("limit", sp.get("limit"));
+
+  // limit は無料プランだと最大5
+  let limit = 5;
+  if (sp.has("limit")) {
+    const requested = parseInt(sp.get("limit"), 10);
+    if (!isNaN(requested)) limit = Math.min(requested, 5);
+  }
+  out.searchParams.set("limit", String(limit));
+
   out.searchParams.set("apikey", key);
 
-  const r = await fetch(out.toString());
-  const body = await r.text();
-  res.status(r.status).setHeader("Content-Type", "application/json").send(body);
+  try {
+    const r = await fetch(out.toString());
+    const body = await r.text();
+    res.status(r.status).setHeader("Content-Type", "application/json").send(body);
+  } catch (err) {
+    console.error(err);
+    res.status(502).json({ error: "Upstream fetch failed", detail: String(err) });
+  }
 }
