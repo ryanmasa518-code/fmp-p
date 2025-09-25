@@ -9,8 +9,16 @@ export default async function handler(req, res) {
   const symbol = sp.get("symbol");
   if (!symbol) return res.status(400).json({ error: "symbol is required" });
 
+  // 必須: period=annual | quarter
+  let period = "annual"; // デフォルト annual
+  if (sp.has("period")) {
+    const p = sp.get("period");
+    if (["annual", "quarter"].includes(p)) period = p;
+  }
+
   const out = new URL(`${BASE}/analyst-estimates`);
   out.searchParams.set("symbol", symbol);
+  out.searchParams.set("period", period);
 
   // limit は無料プランだと最大5
   let limit = 5;
