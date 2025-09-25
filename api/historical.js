@@ -1,15 +1,16 @@
-const BASE = "https://financialmodelingprep.com/api/v3";
-
+const BASE = "https://financialmodelingprep.com/stable";
 export default async function handler(req, res) {
   const key = process.env.FMP_API_KEY;
   if (!key) return res.status(500).json({ error: "Missing FMP_API_KEY" });
 
   const url = new URL(req.url, `http://${req.headers.host}`);
-  const symbol = url.searchParams.get("symbol");
+  const sp = url.searchParams;
+  const symbol = sp.get("symbol");
   if (!symbol) return res.status(400).json({ error: "symbol is required" });
 
-  // from/to/serietype などはそのまま転送
-  const r = await fetch(`${BASE}/historical-price-full/${encodeURIComponent(symbol)}?${url.searchParams}&apikey=${key}`);
+  // from, to など任意
+  const out = `${BASE}/historical-price-eod/full?symbol=${encodeURIComponent(symbol)}&${sp}&apikey=${key}`;
+  const r = await fetch(out);
   const body = await r.text();
   res.status(r.status).setHeader("Content-Type", "application/json").send(body);
 }
